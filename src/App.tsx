@@ -80,7 +80,7 @@ function BookmarkForm({ tabUrl, tabTitle }: BookmarkFormProps) {
         {description}
       </textarea>
       <br />
-      URL:{" "}
+      URL:
       <input
         type="text"
         value={url}
