@@ -1,7 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function App() {
   const [storedApiKey, setStoredApiKey] = useState<string | undefined>();
+
+  useEffect(() => {
+    const loadApiKey = async () => {
+      const result = (await chrome.storage.local.get("apiKey")) as {
+        apiKey?: string;
+      };
+      setStoredApiKey(result.apiKey);
+    };
+
+    loadApiKey();
+  }, []);
 
   function saveApiKey(apiKey: string) {
     chrome.storage.local.set({ apiKey });
