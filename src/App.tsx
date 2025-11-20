@@ -1,9 +1,20 @@
 import { useState } from "react";
 
 function App() {
+  const [storedApiKey, setStoredApiKey] = useState<string>();
+
+  function saveApiKey(apiKey: string) {
+    chrome.storage.local.set({ apiKey });
+    setStoredApiKey(apiKey);
+  }
+
   return (
     <div className="App">
-      Extension will go here
+      {storedApiKey ? (
+        <div>Ready to go!</div>
+      ) : (
+        <SetupForm onSave={saveApiKey} />
+      )}
     </div>
   );
 }
