@@ -7,7 +7,7 @@
     "default_popup": "index.html",
     "default_title": "Stow"
   },
-  "permissions": ["storage"],
+  "permissions": ["storage", "tabs"],
   "commands": {
     "_execute_action": {
       "description": "Open the extension",

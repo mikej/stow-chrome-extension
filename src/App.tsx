@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 
-function App() {
+interface AppProps {
+  url: string;
+  title: string;
+}
+
+function App({ title, url }: AppProps) {
   const [storedApiKey, setStoredApiKey] = useState<string | undefined>();
 
   useEffect(() => {
@@ -21,7 +26,11 @@ function App() {
 
   return (
     <div className="App">
-      {storedApiKey ? <BookmarkForm /> : <SetupForm onSave={saveApiKey} />}
+      {storedApiKey ? (
+        <BookmarkForm tabTitle={title} tabUrl={url} />
+      ) : (
+        <SetupForm onSave={saveApiKey} />
+      )}
     </div>
   );
 }
@@ -48,10 +57,15 @@ function SetupForm({ onSave }: SetupFormProps) {
   );
 }
 
-function BookmarkForm() {
-  const [title, setTitle] = useState("");
+interface BookmarkFormProps {
+  tabUrl: string;
+  tabTitle: string;
+}
+
+function BookmarkForm({ tabUrl, tabTitle }: BookmarkFormProps) {
+  const [title, setTitle] = useState(tabTitle);
   const [description, setDescription] = useState("");
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(tabUrl);
 
   return (
     <form>
