@@ -24,10 +24,46 @@ function App({ title, url }: AppProps) {
     setStoredApiKey(apiKey);
   }
 
+  async function saveBookmark(
+    url: string,
+    title: string,
+    description: string,
+  ): Promise<boolean> {
+    return callStowApi(storedApiKey!, url, title, description);
+  }
+
+  async function callStowApi(
+    apiKey: string,
+    url: string,
+    title: string,
+    description: string,
+  ): Promise<boolean> {
+    const payload = { url, title, description };
+
+    const response = await fetch("https://stow.is/v1/items", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: apiKey,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const error = `Request failed: ${response.status}`;
+      window.alert(error);
+      throw new Error(error);
+    }
+
+    // const result = await response.json();
+
+    return true;
+  }
+
   return (
     <div className="App">
       {storedApiKey ? (
-        <BookmarkForm tabTitle={title} tabUrl={url} />
+        <BookmarkForm tabTitle={title} tabUrl={url} onSave={saveBookmark} />
       ) : (
         <SetupForm onSave={saveApiKey} />
       )}
@@ -60,9 +96,10 @@ function SetupForm({ onSave }: SetupFormProps) {
 interface BookmarkFormProps {
   tabUrl: string;
   tabTitle: string;
+  onSave: (url: string, title: string, description: string) => Promise<boolean>;
 }
 
-function BookmarkForm({ tabUrl, tabTitle }: BookmarkFormProps) {
+function BookmarkForm({ tabUrl, tabTitle, onSave }: BookmarkFormProps) {
   const [title, setTitle] = useState(tabTitle);
   const [description, setDescription] = useState("");
   const [url, setUrl] = useState(tabUrl);
@@ -88,7 +125,15 @@ function BookmarkForm({ tabUrl, tabTitle }: BookmarkFormProps) {
         onChange={(e) => setUrl(e.target.value)}
       />
       <br />
-      <button>Save</button>
+      <button
+        type="submit"
+        onClick={(e) => {
+          e.preventDefault();
+          onSave(url, title, description);
+        }}
+      >
+        Save
+      </button>
     </form>
   );
 }
