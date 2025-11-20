@@ -21,11 +21,7 @@ function App() {
 
   return (
     <div className="App">
-      {storedApiKey ? (
-        <div>Ready to go!</div>
-      ) : (
-        <SetupForm onSave={saveApiKey} />
-      )}
+      {storedApiKey ? <BookmarkForm /> : <SetupForm onSave={saveApiKey} />}
     </div>
   );
 }
@@ -48,6 +44,37 @@ function SetupForm({ onSave }: SetupFormProps) {
         />
       </div>
       <button onClick={() => onSave(apiKey)}>Continue</button>
+    </form>
+  );
+}
+
+function BookmarkForm() {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [url, setUrl] = useState("");
+
+  return (
+    <form>
+      <input
+        type="text"
+        value={title}
+        placeholder="Title"
+        onChange={(e) => setTitle(e.target.value)}
+      />
+      <br />
+      <textarea onChange={(e) => setDescription(e.target.value)}>
+        {description}
+      </textarea>
+      <br />
+      URL:{" "}
+      <input
+        type="text"
+        value={url}
+        placeholder="https://example.com"
+        onChange={(e) => setUrl(e.target.value)}
+      />
+      <br />
+      <button>Save</button>
     </form>
   );
 }
