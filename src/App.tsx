@@ -24,12 +24,8 @@ function App({ title, url }: AppProps) {
     setStoredApiKey(apiKey);
   }
 
-  async function saveBookmark(
-    url: string,
-    title: string,
-    description: string,
-  ): Promise<boolean> {
-    return callStowApi(storedApiKey!, url, title, description);
+  async function saveBookmark(url: string, title: string, description: string) {
+    callStowApi(storedApiKey!, url, title, description);
   }
 
   async function callStowApi(
@@ -37,7 +33,7 @@ function App({ title, url }: AppProps) {
     url: string,
     title: string,
     description: string,
-  ): Promise<boolean> {
+  ) {
     const payload = { url, title, description };
 
     const response = await fetch("https://stow.is/v1/items", {
@@ -55,9 +51,7 @@ function App({ title, url }: AppProps) {
       throw new Error(error);
     }
 
-    // const result = await response.json();
-
-    return true;
+    window.close();
   }
 
   return (
@@ -96,7 +90,7 @@ function SetupForm({ onSave }: SetupFormProps) {
 interface BookmarkFormProps {
   tabUrl: string;
   tabTitle: string;
-  onSave: (url: string, title: string, description: string) => Promise<boolean>;
+  onSave: (url: string, title: string, description: string) => void;
 }
 
 function BookmarkForm({ tabUrl, tabTitle, onSave }: BookmarkFormProps) {
