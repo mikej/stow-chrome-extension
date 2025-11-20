@@ -1,12 +1,9 @@
 .App {
-  text-align: center;
-  color: white;
 }
 
 .container {
   width: 450px;
   height: 450px;
-  background-color: blue;
 }
 
 /*@import "tailwindcss";*/
