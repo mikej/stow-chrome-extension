@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 function App() {
-  const [storedApiKey, setStoredApiKey] = useState<string>();
+  const [storedApiKey, setStoredApiKey] = useState<string | undefined>();
 
   function saveApiKey(apiKey: string) {
     chrome.storage.local.set({ apiKey });
