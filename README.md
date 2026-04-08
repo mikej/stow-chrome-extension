@@ -57,6 +57,23 @@ Optional query params to prefill the form when running outside Chrome:
 http://localhost:5173/?url=https://example.com&title=Example
 ```
 
+## Testing
+
+Unit tests (Vitest + React Testing Library):
+
+```bash
+npm run test:unit
+```
+
+End-to-end extension tests (Playwright):
+
+```bash
+npm run test:e2e:install
+npm run test:e2e
+```
+
+Note: Chrome extension E2E tests require headed mode. If you need to skip them in headless/CI, set `PLAYWRIGHT_HEADLESS=1`.
+
 You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
 ```js
