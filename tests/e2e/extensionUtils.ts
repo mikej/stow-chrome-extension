@@ -1,6 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { chromium, type BrowserContext } from '@playwright/test';
+import { chromium, type BrowserContext, type Page, type TestType } from '@playwright/test';
 
 export const EXTENSION_NAME = 'Stow Chrome Extension';
 
@@ -18,6 +18,49 @@ export async function launchExtensionContext() {
       `--disable-extensions-except=${extensionPath}`,
       `--load-extension=${extensionPath}`
     ]
+  });
+}
+
+export function skipIfHeadless(test: TestType<any>) {
+  const isHeadless = process.env.PLAYWRIGHT_HEADLESS === '1';
+  test.skip(isHeadless, 'Chrome extensions require headed mode.');
+}
+
+export async function withExtensionContext(
+  fn: (context: BrowserContext) => Promise<void>
+) {
+  const context = await launchExtensionContext();
+  try {
+    await fn(context);
+  } finally {
+    await context.close();
+  }
+}
+
+export async function withExtensionPage(
+  fn: (page: Awaited<ReturnType<typeof openExtensionPage>>) => Promise<void>,
+  pagePath = 'index.html',
+  extensionName = EXTENSION_NAME
+) {
+  await withExtensionContext(async (context) => {
+    const page = await openExtensionPage(context, pagePath, extensionName);
+    await fn(page);
+  });
+}
+
+export type ExtensionTest = TestType<{ extensionPage: Page }>;
+
+export function createExtensionTest(baseTest: TestType<any>): ExtensionTest {
+  return baseTest.extend<{ extensionPage: Page }>({
+    extensionPage: async ({}, use, testInfo) => {
+      if (process.env.PLAYWRIGHT_HEADLESS === '1') {
+        testInfo.skip('Chrome extensions require headed mode.');
+      }
+
+      await withExtensionPage(async (page) => {
+        await use(page);
+      });
+    }
   });
 }
 
@@ -59,4 +102,16 @@ export async function getExtensionId(
   }
 
   return extensionId;
+}
+
+export async function openExtensionPage(
+  context: BrowserContext,
+  pagePath = 'index.html',
+  extensionName = EXTENSION_NAME
+) {
+  const extensionId = await getExtensionId(context, extensionName);
+  const normalizedPath = pagePath.replace(/^\/+/, '');
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/${normalizedPath}`);
+  return page;
 }
