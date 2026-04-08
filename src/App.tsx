@@ -1,4 +1,9 @@
 import { useEffect, useState } from "react";
+import {
+  apiKeyStorage,
+  isExtensionEnvironment,
+  maybeCloseWindow,
+} from "./platform";
 
 interface AppProps {
   url: string;
@@ -7,21 +12,20 @@ interface AppProps {
 
 function App({ title, url }: AppProps) {
   const [storedApiKey, setStoredApiKey] = useState<string | undefined>();
+  const [currentTitle, setCurrentTitle] = useState(title);
+  const [currentUrl, setCurrentUrl] = useState(url);
 
   useEffect(() => {
     const loadApiKey = async () => {
-      const result = (await chrome.storage.local.get("apiKey")) as {
-        apiKey?: string;
-      };
-      setStoredApiKey(result.apiKey);
+      const apiKey = await apiKeyStorage.get();
+      setStoredApiKey(apiKey);
     };
 
     loadApiKey();
   }, []);
 
   function saveApiKey(apiKey: string) {
-    chrome.storage.local.set({ apiKey });
-    setStoredApiKey(apiKey);
+    void apiKeyStorage.set(apiKey).then(() => setStoredApiKey(apiKey));
   }
 
   async function saveBookmark(url: string, title: string, description: string) {
@@ -51,13 +55,29 @@ function App({ title, url }: AppProps) {
       throw new Error(error);
     }
 
-    window.close();
+    maybeCloseWindow();
   }
 
   return (
     <div className="App">
+      {!isExtensionEnvironment ? (
+        <DevPanel
+          currentTitle={currentTitle}
+          currentUrl={currentUrl}
+          onChangeTitle={setCurrentTitle}
+          onChangeUrl={setCurrentUrl}
+          onApply={() => {
+            setCurrentTitle(currentTitle.trim());
+            setCurrentUrl(currentUrl.trim());
+          }}
+        />
+      ) : null}
       {storedApiKey ? (
-        <BookmarkForm tabTitle={title} tabUrl={url} onSave={saveBookmark} />
+        <BookmarkForm
+          tabTitle={currentTitle}
+          tabUrl={currentUrl}
+          onSave={saveBookmark}
+        />
       ) : (
         <SetupForm onSave={saveApiKey} />
       )}
@@ -73,7 +93,12 @@ function SetupForm({ onSave }: SetupFormProps) {
   const [apiKey, setApiKey] = useState("");
 
   return (
-    <form>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSave(apiKey);
+      }}
+    >
       <div>Enter your API key to get started.</div>
       <div>
         <input
@@ -82,7 +107,7 @@ function SetupForm({ onSave }: SetupFormProps) {
           onChange={(e) => setApiKey(e.target.value)}
         />
       </div>
-      <button onClick={() => onSave(apiKey)}>Continue</button>
+      <button type="submit">Continue</button>
     </form>
   );
 }
@@ -97,6 +122,14 @@ function BookmarkForm({ tabUrl, tabTitle, onSave }: BookmarkFormProps) {
   const [title, setTitle] = useState(tabTitle);
   const [description, setDescription] = useState("");
   const [url, setUrl] = useState(tabUrl);
+
+  useEffect(() => {
+    setTitle(tabTitle);
+  }, [tabTitle]);
+
+  useEffect(() => {
+    setUrl(tabUrl);
+  }, [tabUrl]);
 
   return (
     <form>
@@ -133,3 +166,55 @@ function BookmarkForm({ tabUrl, tabTitle, onSave }: BookmarkFormProps) {
 }
 
 export default App;
+
+interface DevPanelProps {
+  currentTitle: string;
+  currentUrl: string;
+  onChangeTitle: (value: string) => void;
+  onChangeUrl: (value: string) => void;
+  onApply: () => void;
+}
+
+function DevPanel({
+  currentTitle,
+  currentUrl,
+  onChangeTitle,
+  onChangeUrl,
+  onApply,
+}: DevPanelProps) {
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onApply();
+      }}
+    >
+      <div>
+        Dev mode: chrome APIs unavailable. Optional query params: `?url=...&title=...`.
+      </div>
+      <div>
+        <label>
+          Title:
+          <input
+            type="text"
+            value={currentTitle}
+            onChange={(e) => onChangeTitle(e.target.value)}
+            placeholder="Example title"
+          />
+        </label>
+      </div>
+      <div>
+        <label>
+          URL:
+          <input
+            type="text"
+            value={currentUrl}
+            onChange={(e) => onChangeUrl(e.target.value)}
+            placeholder="https://example.com"
+          />
+        </label>
+      </div>
+      <button type="submit">Apply</button>
+    </form>
+  );
+}

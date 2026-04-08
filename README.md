@@ -43,6 +43,20 @@ export default defineConfig([
 ])
 ```
 
+## Local Dev (Outside Chrome)
+
+Run the app with the Vite dev server and open it in your browser:
+
+```bash
+npm run dev
+```
+
+Optional query params to prefill the form when running outside Chrome:
+
+```text
+http://localhost:5173/?url=https://example.com&title=Example
+```
+
 You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
 ```js
