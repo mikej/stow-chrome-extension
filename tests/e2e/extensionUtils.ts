@@ -21,7 +21,9 @@ export async function launchExtensionContext() {
   });
 }
 
-export function skipIfHeadless(test: TestType<any>) {
+export type BaseTest = TestType<object>;
+
+export function skipIfHeadless(test: BaseTest) {
   const isHeadless = process.env.PLAYWRIGHT_HEADLESS === '1';
   test.skip(isHeadless, 'Chrome extensions require headed mode.');
 }
@@ -50,9 +52,9 @@ export async function withExtensionPage(
 
 export type ExtensionTest = TestType<{ extensionPage: Page }>;
 
-export function createExtensionTest(baseTest: TestType<any>): ExtensionTest {
+export function createExtensionTest(baseTest: BaseTest): ExtensionTest {
   return baseTest.extend<{ extensionPage: Page }>({
-    extensionPage: async ({}, use, testInfo) => {
+    extensionPage: async (_fixtures, use, testInfo) => {
       if (process.env.PLAYWRIGHT_HEADLESS === '1') {
         testInfo.skip('Chrome extensions require headed mode.');
       }
