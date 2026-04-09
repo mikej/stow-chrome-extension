@@ -1,8 +1,10 @@
 body {
-  background-color: white;
+  background-color: #ececec;
 }
 
 .App {
+  background: white;
+  padding: 5px;
 }
 
 .container {
