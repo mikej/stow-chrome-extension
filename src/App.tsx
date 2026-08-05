@@ -4,6 +4,7 @@ import {
   isExtensionEnvironment,
   maybeCloseWindow,
 } from "./platform";
+import { getItemsApiUrl } from "./config";
 import DevPanel from "./DevPanel";
 import SetupForm from "./SetupForm";
 
@@ -42,7 +43,7 @@ function App({ title, url }: AppProps) {
   ) {
     const payload = { url, title, description };
 
-    const response = await fetch("https://stow.is/v1/items", {
+    const response = await fetch(getItemsApiUrl(), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
