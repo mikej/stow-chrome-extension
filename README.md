@@ -1,61 +1,30 @@
-# React + TypeScript + Vite
+# Chrome/Safari extension for Stow
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is a rewritten browser extension for [Stow](https://stow.is), replacing the [original Chrome extension](https://github.com/mikej/stuff-chrome-extension).
 
-Currently, two official plugins are available:
+The original extension was built using Manifest v2 and relied on APIs and permissions for accessing the current tab and selected text that are no longer supported in Manifest v3.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Building for Installation as a Browser Extension
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
 ```
 
-## Local Dev (Outside Chrome)
+## Developing Without Installing as a Browser Extension
 
-Run the app with the Vite dev server and open it in your browser:
+For a streamlined development workflow, the extension can be opened directly as a browser tab instead of being installed as an unpacked development extension.
+
+In this mode, a mini form is displayed to provide the details that would normally be obtained through browser APIs when running as an extension (e.g. the current page title and URL).
+
+To do this, run the app with the Vite dev server and open the localhost link in the browser:
 
 ```bash
 npm run dev
 ```
 
-Optional query params to prefill the form when running outside Chrome:
+Optional query parameters can be used to prefill the form when running outside Chrome:
 
-```text
-http://localhost:5173/?url=https://example.com&title=Example
-```
+e.g. http://localhost:5173/?url=https://example.com&title=Example
 
 ## Testing
 
@@ -70,35 +39,4 @@ End-to-end extension tests (Playwright):
 ```bash
 npm run test:e2e:install
 npm run test:e2e
-```
-
-Note: Chrome extension E2E tests require headed mode. If you need to skip them in headless/CI, set `PLAYWRIGHT_HEADLESS=1`.
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
