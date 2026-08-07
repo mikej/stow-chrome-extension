@@ -4,6 +4,10 @@ export function getItemsApiUrl() {
   return `${getApiBaseUrl()}/v1/items`;
 }
 
+export function getMeApiUrl() {
+  return `${getApiBaseUrl()}/v1/me`;
+}
+
 export function getApiBaseUrl() {
   return normalizeApiBaseUrl(import.meta.env.VITE_STOW_API_BASE_URL);
 }

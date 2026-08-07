@@ -4,9 +4,9 @@ import {
   isExtensionEnvironment,
   maybeCloseWindow,
 } from "./platform";
-import { getItemsApiUrl } from "./config";
+import { getItemsApiUrl, getMeApiUrl } from "./config";
 import DevPanel from "./DevPanel";
-import SetupForm from "./SetupForm";
+import SetupForm, { type SetupApiKeyResult } from "./SetupForm";
 
 interface AppProps {
   url: string;
@@ -27,8 +27,29 @@ function App({ title, url }: AppProps) {
     loadApiKey();
   }, []);
 
-  function saveApiKey(apiKey: string) {
-    void apiKeyStorage.set(apiKey).then(() => setStoredApiKey(apiKey));
+  async function saveApiKey(apiKey: string): Promise<SetupApiKeyResult> {
+    const response = await fetch(getMeApiUrl(), {
+      method: "GET",
+      headers: {
+        Authorization: apiKey,
+      },
+    });
+
+    console.log("Got response", response);
+
+    if (response.status === 401) {
+      return "invalid-token";
+    }
+
+    if (!response.ok) {
+      const error = `Request failed: ${response.status}`;
+      window.alert(error);
+      throw new Error(error);
+    }
+
+    await apiKeyStorage.set(apiKey);
+    setStoredApiKey(apiKey);
+    return "saved";
   }
 
   async function saveBookmark(url: string, title: string, description: string) {
@@ -116,9 +137,10 @@ function BookmarkForm({ tabUrl, tabTitle, onSave }: BookmarkFormProps) {
         onChange={(e) => setTitle(e.target.value)}
       />
       <br />
-      <textarea onChange={(e) => setDescription(e.target.value)}>
-        {description}
-      </textarea>
+      <textarea
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+      />
       <br />
       URL:
       <input

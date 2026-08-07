@@ -1,4 +1,4 @@
-import { normalizeApiBaseUrl } from "./config";
+import { getMeApiUrl, normalizeApiBaseUrl } from "./config";
 
 describe("normalizeApiBaseUrl", () => {
   it("uses the production URL by default", () => {
@@ -11,5 +11,11 @@ describe("normalizeApiBaseUrl", () => {
     expect(normalizeApiBaseUrl(" http://localhost:3000/// ")).toBe(
       "http://localhost:3000",
     );
+  });
+});
+
+describe("getMeApiUrl", () => {
+  it("uses the configured base URL", () => {
+    expect(getMeApiUrl()).toBe("https://stow.is/v1/me");
   });
 });
