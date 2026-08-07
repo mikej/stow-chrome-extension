@@ -15,7 +15,7 @@ describe('App (dev mode)', () => {
       screen.getByText(/Dev mode: chrome APIs unavailable/i)
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Enter your API key to get started/i)
+      screen.getByText(/Enter an API token to get started/i)
     ).toBeInTheDocument();
 
     const user = userEvent.setup();
@@ -41,7 +41,7 @@ describe('App (dev mode)', () => {
     render(<App url="" title="" />);
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/API key:/i), 'valid-token');
+    await user.type(screen.getByLabelText(/API token:/i), 'valid-token');
     await user.click(screen.getByRole('button', { name: /Continue/i }));
 
     expect(await screen.findByPlaceholderText('Title')).toBeInTheDocument();
@@ -65,13 +65,13 @@ describe('App (dev mode)', () => {
     render(<App url="" title="" />);
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/API key:/i), 'bad-token');
+    await user.type(screen.getByLabelText(/API token:/i), 'bad-token');
     await user.click(screen.getByRole('button', { name: /Continue/i }));
 
     expect(
       await screen.findByText(/API token incorrect/i)
     ).toBeInTheDocument();
-    expect(screen.getByText(/Enter your API key to get started/i)).toBeInTheDocument();
+    expect(screen.getByText(/Enter an API token to get started/i)).toBeInTheDocument();
     expect(localStorage.getItem('apiKey')).toBeNull();
   });
 });

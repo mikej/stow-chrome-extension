@@ -8,7 +8,7 @@ const extensionTest: ExtensionTest = createExtensionTest(test);
 
 extensionTest('popup loads in extension context', async ({ extensionPage }) => {
   await expect(
-    extensionPage.getByText(/Enter your API key to get started/i)
+    extensionPage.getByText(/Enter an API token to get started/i)
   ).toBeVisible();
   await expect(
     extensionPage.getByText(/Dev mode: chrome APIs unavailable/i)

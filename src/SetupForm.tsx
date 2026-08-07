@@ -31,10 +31,10 @@ function SetupForm({ onSave }: SetupFormProps) {
         }
       }}
     >
-      <div>Enter your API key to get started.</div>
+      <div>Enter an API token to get started.</div>
       <div>
         <label>
-          API key:
+          API token:
           <input
             type="text"
             value={apiKey}
