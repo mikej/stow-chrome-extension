@@ -12,15 +12,25 @@ describe('App (dev mode)', () => {
     render(<App url="" title="" />);
 
     expect(
-      screen.getByText(/Dev mode: chrome APIs unavailable/i)
+      screen.getByText(/Chrome APIs unavailable/i)
     ).toBeInTheDocument();
     expect(
       screen.getByText(/Enter an API token to get started/i)
     ).toBeInTheDocument();
+    expect(screen.getByLabelText(/API token/i)).toHaveClass("rounded-md");
+    expect(screen.getByRole('button', { name: /Continue/i })).toHaveClass(
+      "bg-neutral-950"
+    );
 
     const user = userEvent.setup();
     const titleInput = screen.getByLabelText(/Title:/i);
     const urlInput = screen.getByLabelText(/URL:/i);
+
+    expect(titleInput).toHaveClass("rounded-md");
+    expect(urlInput).toHaveClass("rounded-md");
+    expect(screen.getByRole('button', { name: /Apply/i })).toHaveClass(
+      "border-neutral-200"
+    );
 
     await user.clear(titleInput);
     await user.type(titleInput, 'Example title');
@@ -41,7 +51,7 @@ describe('App (dev mode)', () => {
     render(<App url="" title="" />);
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/API token:/i), 'valid-token');
+    await user.type(screen.getByLabelText(/API token/i), 'valid-token');
     await user.click(screen.getByRole('button', { name: /Continue/i }));
 
     expect(await screen.findByPlaceholderText('Title')).toBeInTheDocument();
@@ -65,7 +75,7 @@ describe('App (dev mode)', () => {
     render(<App url="" title="" />);
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/API token:/i), 'bad-token');
+    await user.type(screen.getByLabelText(/API token/i), 'bad-token');
     await user.click(screen.getByRole('button', { name: /Continue/i }));
 
     expect(

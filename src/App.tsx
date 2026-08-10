@@ -7,6 +7,11 @@ import {
 import { getItemsApiUrl, getMeApiUrl } from "./config";
 import DevPanel from "./DevPanel";
 import SetupForm, { type SetupApiKeyResult } from "./SetupForm";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { BookmarkPlus } from "lucide-react";
 
 interface AppProps {
   url: string;
@@ -34,8 +39,6 @@ function App({ title, url }: AppProps) {
         Authorization: apiKey,
       },
     });
-
-    console.log("Got response", response);
 
     if (response.status === 401) {
       return "invalid-token";
@@ -83,7 +86,7 @@ function App({ title, url }: AppProps) {
   }
 
   return (
-    <div className="App">
+    <div className="min-h-full bg-neutral-50 p-3 text-neutral-950">
       {!isExtensionEnvironment ? (
         <DevPanel
           currentTitle={currentTitle}
@@ -129,36 +132,68 @@ function BookmarkForm({ tabUrl, tabTitle, onSave }: BookmarkFormProps) {
   }, [tabUrl]);
 
   return (
-    <form>
-      <input
-        type="text"
-        value={title}
-        placeholder="Title"
-        onChange={(e) => setTitle(e.target.value)}
-      />
-      <br />
-      <textarea
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
-      <br />
-      URL:
-      <input
-        type="text"
-        value={url}
-        placeholder="https://example.com"
-        onChange={(e) => setUrl(e.target.value)}
-      />
-      <br />
-      <button
-        type="submit"
-        onClick={(e) => {
-          e.preventDefault();
-          onSave(url, title, description);
-        }}
-      >
-        Save
-      </button>
+    <form
+      className="w-[336px] rounded-lg border border-neutral-200 bg-white p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+      aria-label="Save bookmark"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSave(url, title, description);
+      }}
+    >
+      <div className="mb-3 flex items-center justify-between border-b border-neutral-100 pb-2">
+        <div>
+          <h1 className="text-sm font-semibold leading-5 text-neutral-950">
+            Save bookmark
+          </h1>
+          <p className="text-xs leading-4 text-neutral-500">
+            Add this page to Stow.
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="bookmark-title">Title</Label>
+          <Input
+            id="bookmark-title"
+            type="text"
+            value={title}
+            placeholder="Title"
+            onChange={(e) => setTitle(e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="bookmark-description">Description</Label>
+          <Textarea
+            id="bookmark-description"
+            value={description}
+            placeholder="Add a note or selected text"
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="bookmark-url">URL</Label>
+          <Input
+            id="bookmark-url"
+            type="url"
+            value={url}
+            placeholder="https://example.com"
+            onChange={(e) => setUrl(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="mt-3 flex justify-end border-t border-neutral-100 pt-3">
+        <Button
+          type="submit"
+          className="h-8 px-3"
+        >
+          <BookmarkPlus aria-hidden="true" />
+          Save
+        </Button>
+      </div>
     </form>
   );
 }

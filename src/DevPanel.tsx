@@ -1,3 +1,7 @@
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
 interface DevPanelProps {
   currentTitle: string;
   currentUrl: string;
@@ -15,37 +19,50 @@ function DevPanel({
 }: DevPanelProps) {
   return (
     <form
+      className="mb-3 w-[336px] rounded-lg border border-neutral-200 bg-white p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
       onSubmit={(e) => {
         e.preventDefault();
         onApply();
       }}
     >
-      <div>
-        Dev mode: chrome APIs unavailable. Optional query params: `?url=...&title=...`.
+      <div className="mb-3 border-b border-neutral-100 pb-2">
+        <h1 className="text-sm font-semibold leading-5 text-neutral-950">
+          Dev mode
+        </h1>
+        <p className="text-xs leading-4 text-neutral-500">
+          Chrome APIs unavailable. Optional query params: `?url=...&title=...`.
+        </p>
       </div>
-      <div>
-        <label>
-          Title:
-          <input
+
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="dev-title">Title:</Label>
+          <Input
+            id="dev-title"
             type="text"
             value={currentTitle}
             onChange={(e) => onChangeTitle(e.target.value)}
             placeholder="Example title"
           />
-        </label>
-      </div>
-      <div>
-        <label>
-          URL:
-          <input
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="dev-url">URL:</Label>
+          <Input
+            id="dev-url"
             type="text"
             value={currentUrl}
             onChange={(e) => onChangeUrl(e.target.value)}
             placeholder="https://example.com"
           />
-        </label>
+        </div>
       </div>
-      <button type="submit">Apply</button>
+
+      <div className="mt-3 flex justify-end border-t border-neutral-100 pt-3">
+        <Button type="submit" variant="secondary">
+          Apply
+        </Button>
+      </div>
     </form>
   );
 }
