@@ -1,15 +1,27 @@
-body {
-  background-color: #ececec;
+@import "tailwindcss";
+
+@theme {
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --color-ring: oklch(0.708 0 0);
 }
 
-.App {
-  background: white;
-  padding: 5px;
-}
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
 
-.container {
-  width: 350px;
-  height: 250px;
-}
+  html,
+  body,
+  #root {
+    min-width: 360px;
+    min-height: 100%;
+    margin: 0;
+  }
 
-/*@import "tailwindcss";*/
+  body {
+    background: #f7f7f8;
+    color: #171717;
+    font-family: var(--font-sans);
+  }
+}
