@@ -84,4 +84,43 @@ describe('App (dev mode)', () => {
     expect(screen.getByText(/Enter an API token to get started/i)).toBeInTheDocument();
     expect(localStorage.getItem('apiKey')).toBeNull();
   });
+
+  it('shows an inline error when saving a bookmark fails', async () => {
+    localStorage.setItem('apiKey', 'valid-token');
+    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(null, { status: 500 })
+    );
+
+    render(<App url="https://example.com" title="Example title" />);
+
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /Save/i }));
+
+    expect(
+      await screen.findByRole('alert')
+    ).toHaveTextContent(/Unable to save bookmark/i);
+    expect(alertMock).not.toHaveBeenCalled();
+  });
+
+  it('clears the bookmark save error before retrying', async () => {
+    localStorage.setItem('apiKey', 'valid-token');
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(null, { status: 500 }))
+      .mockResolvedValueOnce(new Response('{}', { status: 200 }));
+
+    render(<App url="https://example.com" title="Example title" />);
+
+    const user = userEvent.setup();
+    const saveButton = await screen.findByRole('button', { name: /Save/i });
+
+    await user.click(saveButton);
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /Unable to save bookmark/i
+    );
+
+    await user.click(screen.getByRole('button', { name: /Save/i }));
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
 });

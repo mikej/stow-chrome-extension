@@ -56,7 +56,7 @@ function App({ title, url }: AppProps) {
   }
 
   async function saveBookmark(url: string, title: string, description: string) {
-    callStowApi(storedApiKey!, url, title, description);
+    return callStowApi(storedApiKey!, url, title, description);
   }
 
   async function callStowApi(
@@ -78,7 +78,6 @@ function App({ title, url }: AppProps) {
 
     if (!response.ok) {
       const error = `Request failed: ${response.status}`;
-      window.alert(error);
       throw new Error(error);
     }
 
@@ -115,13 +114,15 @@ function App({ title, url }: AppProps) {
 interface BookmarkFormProps {
   tabUrl: string;
   tabTitle: string;
-  onSave: (url: string, title: string, description: string) => void;
+  onSave: (url: string, title: string, description: string) => Promise<void>;
 }
 
 function BookmarkForm({ tabUrl, tabTitle, onSave }: BookmarkFormProps) {
   const [title, setTitle] = useState(tabTitle);
   const [description, setDescription] = useState("");
   const [url, setUrl] = useState(tabUrl);
+  const [error, setError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     setTitle(tabTitle);
@@ -135,11 +136,29 @@ function BookmarkForm({ tabUrl, tabTitle, onSave }: BookmarkFormProps) {
     <form
       className="w-[336px] rounded-lg border border-neutral-200 bg-white p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
       aria-label="Save bookmark"
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
-        onSave(url, title, description);
+        setError("");
+        setIsSaving(true);
+
+        try {
+          await onSave(url, title, description);
+        } catch {
+          setError("Unable to save bookmark. Try again.");
+        } finally {
+          setIsSaving(false);
+        }
       }}
     >
+      {error ? (
+        <div
+          className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"
+          role="alert"
+        >
+          {error}
+        </div>
+      ) : null}
+
       <div className="mb-3 flex items-center justify-between border-b border-neutral-100 pb-2">
         <div>
           <h1 className="text-sm font-semibold leading-5 text-neutral-950">
@@ -189,9 +208,10 @@ function BookmarkForm({ tabUrl, tabTitle, onSave }: BookmarkFormProps) {
         <Button
           type="submit"
           className="h-8 px-3"
+          disabled={isSaving}
         >
           <BookmarkPlus aria-hidden="true" />
-          Save
+          {isSaving ? "Saving..." : "Save"}
         </Button>
       </div>
     </form>
