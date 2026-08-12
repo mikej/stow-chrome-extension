@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { BookmarkPlus } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface AppProps {
   url: string;
@@ -85,7 +86,7 @@ function App({ title, url }: AppProps) {
   }
 
   return (
-    <div className="min-h-full bg-neutral-50 p-3 text-neutral-950">
+    <div className={cn("min-h-full text-neutral-950", !isExtensionEnvironment && "p-3 bg-neutral-50")} >
       {!isExtensionEnvironment ? (
         <DevPanel
           currentTitle={currentTitle}
@@ -134,7 +135,7 @@ function BookmarkForm({ tabUrl, tabTitle, onSave }: BookmarkFormProps) {
 
   return (
     <form
-      className="w-[336px] rounded-lg border border-neutral-200 bg-white p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+      className={cn("w-[336px]  bg-white p-3", !isExtensionEnvironment && "rounded-lg border border-neutral-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]")}
       aria-label="Save bookmark"
       onSubmit={async (e) => {
         e.preventDefault();
