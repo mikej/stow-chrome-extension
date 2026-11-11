@@ -4,13 +4,18 @@ import {
   isExtensionEnvironment,
   maybeCloseWindow,
 } from "./platform";
-import { getItemsApiUrl, getMeApiUrl } from "./config";
+import {
+  getCheckItemApiUrl,
+  getItemApiUrl,
+  getItemsApiUrl,
+  getMeApiUrl,
+} from "./config";
 import SetupForm, { type SetupApiKeyResult } from "./SetupForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { BookmarkPlus } from "lucide-react";
+import { BookmarkPlus, LoaderCircle, Save, TriangleAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AppProps {
@@ -18,8 +23,26 @@ interface AppProps {
   title: string;
 }
 
+interface TabDetails {
+  url: string;
+  title: string;
+}
+
+export interface BookmarkDetails {
+  url: string;
+  title: string;
+  description: string;
+}
+
+export type CheckResult =
+  | { existing: true; item: BookmarkDetails & { id: number } }
+  | { existing: false; item: BookmarkDetails };
+
+const FALLBACK_LABEL = "Couldn't check Stow – using page details";
+
 function App({ title, url }: AppProps) {
   const [storedApiKey, setStoredApiKey] = useState<string | undefined>();
+  const [lookup, setLookup] = useState<CheckResult | "failed" | undefined>();
 
   useEffect(() => {
     const loadApiKey = async () => {
@@ -29,6 +52,26 @@ function App({ title, url }: AppProps) {
 
     loadApiKey();
   }, []);
+
+  useEffect(() => {
+    if (!storedApiKey || !url) {
+      return;
+    }
+
+    let ignore = false;
+
+    checkBookmark(storedApiKey, { url, title })
+      .then((result) => {
+        if (!ignore) setLookup(result);
+      })
+      .catch(() => {
+        if (!ignore) setLookup("failed");
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [storedApiKey, url, title]);
 
   async function saveApiKey(apiKey: string): Promise<SetupApiKeyResult> {
     const response = await fetch(getMeApiUrl(), {
@@ -53,43 +96,55 @@ function App({ title, url }: AppProps) {
     return "saved";
   }
 
-  async function saveBookmark(url: string, title: string, description: string) {
-    return callStowApi(storedApiKey!, url, title, description);
-  }
+  function renderBookmarkForm(apiKey: string) {
+    const tabDetails = { url, title, description: "" };
 
-  async function callStowApi(
-    apiKey: string,
-    url: string,
-    title: string,
-    description: string,
-  ) {
-    const payload = { url, title, description };
-
-    const response = await fetch(getItemsApiUrl(), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: apiKey,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const error = `Request failed: ${response.status}`;
-      throw new Error(error);
+    if (!url) {
+      return (
+        <BookmarkForm
+          initial={tabDetails}
+          onSave={(details) => createBookmark(apiKey, details)}
+        />
+      );
     }
 
-    maybeCloseWindow();
+    if (!lookup) {
+      return <CheckingCard />;
+    }
+
+    if (lookup === "failed") {
+      return (
+        <BookmarkForm
+          initial={tabDetails}
+          fallback
+          onSave={(details) => createBookmark(apiKey, details)}
+        />
+      );
+    }
+
+    if (lookup.existing) {
+      const id = lookup.item.id;
+      return (
+        <BookmarkForm
+          initial={lookup.item}
+          mode="edit"
+          onSave={(details) => updateBookmark(apiKey, id, details)}
+        />
+      );
+    }
+
+    return (
+      <BookmarkForm
+        initial={lookup.item}
+        onSave={(details) => createBookmark(apiKey, details)}
+      />
+    );
   }
 
   return (
     <div className="min-h-full text-neutral-950">
       {storedApiKey ? (
-        <BookmarkForm
-          tabTitle={title}
-          tabUrl={url}
-          onSave={saveBookmark}
-        />
+        renderBookmarkForm(storedApiKey)
       ) : (
         <SetupForm onSave={saveApiKey} />
       )}
@@ -97,32 +152,140 @@ function App({ title, url }: AppProps) {
   );
 }
 
-interface BookmarkFormProps {
-  tabUrl: string;
-  tabTitle: string;
-  onSave: (url: string, title: string, description: string) => Promise<void>;
+async function checkBookmark(
+  apiKey: string,
+  tab: TabDetails,
+): Promise<CheckResult> {
+  const response = await fetch(getCheckItemApiUrl(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: apiKey,
+    },
+    body: JSON.stringify({ item: { url: tab.url, title: tab.title } }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const item = data?.item;
+
+  if (typeof data?.existing !== "boolean" || !item) {
+    throw new Error("Unexpected check response");
+  }
+
+  const details: BookmarkDetails = {
+    url: item.url ?? tab.url,
+    title: item.title ?? "",
+    description: item.description ?? "",
+  };
+
+  if (data.existing) {
+    if (typeof item.id !== "number") {
+      throw new Error("Unexpected check response");
+    }
+    return { existing: true, item: { ...details, id: item.id } };
+  }
+
+  return { existing: false, item: details };
 }
 
-function BookmarkForm({ tabUrl, tabTitle, onSave }: BookmarkFormProps) {
-  const [title, setTitle] = useState(tabTitle);
-  const [description, setDescription] = useState("");
-  const [url, setUrl] = useState(tabUrl);
+async function createBookmark(apiKey: string, details: BookmarkDetails) {
+  const response = await fetch(getItemsApiUrl(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: apiKey,
+    },
+    body: JSON.stringify(details),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
+
+  maybeCloseWindow();
+}
+
+async function updateBookmark(
+  apiKey: string,
+  id: number,
+  details: BookmarkDetails,
+) {
+  const response = await fetch(getItemApiUrl(id), {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: apiKey,
+    },
+    body: JSON.stringify({ item: details }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
+
+  maybeCloseWindow();
+}
+
+const cardClassName = cn(
+  "w-[336px] bg-white p-3",
+  !isExtensionEnvironment &&
+    "rounded-lg border border-neutral-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]",
+);
+
+function CheckingCard() {
+  return (
+    <div
+      className={cn(cardClassName, "flex items-center gap-2 text-xs text-neutral-500")}
+      role="status"
+    >
+      <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+      Checking Stow…
+    </div>
+  );
+}
+
+interface BookmarkFormProps {
+  initial: BookmarkDetails;
+  mode?: "create" | "edit";
+  fallback?: boolean;
+  onSave: (details: BookmarkDetails) => Promise<void>;
+}
+
+function BookmarkForm({
+  initial,
+  mode = "create",
+  fallback = false,
+  onSave,
+}: BookmarkFormProps) {
+  const [title, setTitle] = useState(initial.title);
+  const [description, setDescription] = useState(initial.description);
+  const [url, setUrl] = useState(initial.url);
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
+  const isEdit = mode === "edit";
+
   return (
     <form
-      className={cn("w-[336px]  bg-white p-3", !isExtensionEnvironment && "rounded-lg border border-neutral-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)]")}
-      aria-label="Save bookmark"
+      className={cardClassName}
+      aria-label={isEdit ? "Edit bookmark" : "Save bookmark"}
       onSubmit={async (e) => {
         e.preventDefault();
         setError("");
         setIsSaving(true);
 
         try {
-          await onSave(url, title, description);
+          await onSave({ url, title, description });
         } catch {
-          setError("Unable to save bookmark. Try again.");
+          setError(
+            isEdit
+              ? "Unable to update bookmark. Try again."
+              : "Unable to save bookmark. Try again.",
+          );
         } finally {
           setIsSaving(false);
         }
@@ -139,11 +302,20 @@ function BookmarkForm({ tabUrl, tabTitle, onSave }: BookmarkFormProps) {
 
       <div className="mb-3 flex items-center justify-between border-b border-neutral-100 pb-2">
         <div>
-          <h1 className="text-sm font-semibold leading-5 text-neutral-950">
-            Save bookmark
+          <h1 className="flex items-center gap-1.5 text-sm font-semibold leading-5 text-neutral-950">
+            {isEdit ? "Edit bookmark" : "Save bookmark"}
+            {fallback ? (
+              <TriangleAlert
+                className="size-3.5 text-amber-500"
+                role="img"
+                aria-label={FALLBACK_LABEL}
+              >
+                <title>{FALLBACK_LABEL}</title>
+              </TriangleAlert>
+            ) : null}
           </h1>
           <p className="text-xs leading-4 text-neutral-500">
-            Add this page to Stow.
+            {isEdit ? "Already saved in Stow." : "Add this page to Stow."}
           </p>
         </div>
       </div>
@@ -184,13 +356,18 @@ function BookmarkForm({ tabUrl, tabTitle, onSave }: BookmarkFormProps) {
       </div>
 
       <div className="mt-3 flex justify-end border-t border-neutral-100 pt-3">
-        <Button
-          type="submit"
-          className="h-8 px-3"
-          disabled={isSaving}
-        >
-          <BookmarkPlus aria-hidden="true" />
-          {isSaving ? "Saving..." : "Save"}
+        <Button type="submit" className="h-8 px-3" disabled={isSaving}>
+          {isEdit ? (
+            <>
+              <Save aria-hidden="true" />
+              {isSaving ? "Updating..." : "Update"}
+            </>
+          ) : (
+            <>
+              <BookmarkPlus aria-hidden="true" />
+              {isSaving ? "Saving..." : "Save"}
+            </>
+          )}
         </Button>
       </div>
     </form>
