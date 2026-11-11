@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
+import DevHarness from './DevHarness';
 
 describe('App (dev mode)', () => {
   beforeEach(() => {
@@ -9,7 +10,7 @@ describe('App (dev mode)', () => {
   });
 
   it('shows dev panel and setup form when chrome APIs are unavailable', async () => {
-    render(<App url="" title="" />);
+    render(<DevHarness url="" title="" />);
 
     expect(
       screen.getByText(/Chrome APIs unavailable/i)
@@ -122,5 +123,31 @@ describe('App (dev mode)', () => {
     await user.click(screen.getByRole('button', { name: /Save/i }));
 
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+  it('re-initialises the app with the dev panel details on apply', async () => {
+    localStorage.setItem('apiKey', 'valid-token');
+
+    render(<DevHarness url="https://example.com" title="Example title" />);
+
+    const user = userEvent.setup();
+    const bookmarkTitle = await screen.findByPlaceholderText('Title');
+    await user.clear(bookmarkTitle);
+    await user.type(bookmarkTitle, 'Unsaved edit');
+
+    await user.clear(screen.getByLabelText(/Title:/i));
+    await user.type(screen.getByLabelText(/Title:/i), '  Applied title  ');
+    await user.clear(screen.getByLabelText(/URL:/i));
+    await user.type(screen.getByLabelText(/URL:/i), 'https://example.com/applied');
+
+    expect(screen.getByPlaceholderText('Title')).toHaveValue('Unsaved edit');
+
+    await user.click(screen.getByRole('button', { name: /Apply/i }));
+
+    expect(await screen.findByPlaceholderText('Title')).toHaveValue(
+      'Applied title'
+    );
+    expect(screen.getByLabelText('URL')).toHaveValue(
+      'https://example.com/applied'
+    );
   });
 });

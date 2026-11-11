@@ -10,24 +10,13 @@ const hasChromeTabs = typeof chrome !== "undefined" && !!chrome.tabs?.query;
 export const isExtensionEnvironment = hasChromeStorage || hasChromeTabs;
 
 export async function getActiveTabInfo(): Promise<TabInfo> {
-  if (hasChromeTabs) {
-    const [tab] = await chrome.tabs.query({
-      active: true,
-      currentWindow: true,
-    });
-    return {
-      url: tab?.url ?? "",
-      title: tab?.title ?? "",
-    };
-  }
-
-  const params = new URLSearchParams(window.location.search);
-  const urlFromQuery = params.get("url");
-  const titleFromQuery = params.get("title");
-
+  const [tab] = await chrome.tabs.query({
+    active: true,
+    currentWindow: true,
+  });
   return {
-    url: urlFromQuery ?? "",
-    title: titleFromQuery ?? "",
+    url: tab?.url ?? "",
+    title: tab?.title ?? "",
   };
 }
 

@@ -5,7 +5,6 @@ import {
   maybeCloseWindow,
 } from "./platform";
 import { getItemsApiUrl, getMeApiUrl } from "./config";
-import DevPanel from "./DevPanel";
 import SetupForm, { type SetupApiKeyResult } from "./SetupForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,8 +20,6 @@ interface AppProps {
 
 function App({ title, url }: AppProps) {
   const [storedApiKey, setStoredApiKey] = useState<string | undefined>();
-  const [currentTitle, setCurrentTitle] = useState(title);
-  const [currentUrl, setCurrentUrl] = useState(url);
 
   useEffect(() => {
     const loadApiKey = async () => {
@@ -86,23 +83,11 @@ function App({ title, url }: AppProps) {
   }
 
   return (
-    <div className={cn("min-h-full text-neutral-950", !isExtensionEnvironment && "p-3 bg-neutral-50")} >
-      {!isExtensionEnvironment ? (
-        <DevPanel
-          currentTitle={currentTitle}
-          currentUrl={currentUrl}
-          onChangeTitle={setCurrentTitle}
-          onChangeUrl={setCurrentUrl}
-          onApply={() => {
-            setCurrentTitle(currentTitle.trim());
-            setCurrentUrl(currentUrl.trim());
-          }}
-        />
-      ) : null}
+    <div className="min-h-full text-neutral-950">
       {storedApiKey ? (
         <BookmarkForm
-          tabTitle={currentTitle}
-          tabUrl={currentUrl}
+          tabTitle={title}
+          tabUrl={url}
           onSave={saveBookmark}
         />
       ) : (
@@ -124,14 +109,6 @@ function BookmarkForm({ tabUrl, tabTitle, onSave }: BookmarkFormProps) {
   const [url, setUrl] = useState(tabUrl);
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    setTitle(tabTitle);
-  }, [tabTitle]);
-
-  useEffect(() => {
-    setUrl(tabUrl);
-  }, [tabUrl]);
 
   return (
     <form

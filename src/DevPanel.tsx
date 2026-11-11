@@ -1,28 +1,28 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 interface DevPanelProps {
-  currentTitle: string;
-  currentUrl: string;
-  onChangeTitle: (value: string) => void;
-  onChangeUrl: (value: string) => void;
-  onApply: () => void;
+  initialUrl: string;
+  initialTitle: string;
+  onApply: (url: string, title: string) => void;
 }
 
-function DevPanel({
-  currentTitle,
-  currentUrl,
-  onChangeTitle,
-  onChangeUrl,
-  onApply,
-}: DevPanelProps) {
+function DevPanel({ initialUrl, initialTitle, onApply }: DevPanelProps) {
+  const [title, setTitle] = useState(initialTitle);
+  const [url, setUrl] = useState(initialUrl);
+
   return (
     <form
       className="mb-3 w-[336px] rounded-lg border border-neutral-200 bg-white p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
       onSubmit={(e) => {
         e.preventDefault();
-        onApply();
+        const trimmedTitle = title.trim();
+        const trimmedUrl = url.trim();
+        setTitle(trimmedTitle);
+        setUrl(trimmedUrl);
+        onApply(trimmedUrl, trimmedTitle);
       }}
     >
       <div className="mb-3 border-b border-neutral-100 pb-2">
@@ -40,8 +40,8 @@ function DevPanel({
           <Input
             id="dev-title"
             type="text"
-            value={currentTitle}
-            onChange={(e) => onChangeTitle(e.target.value)}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             placeholder="Example title"
           />
         </div>
@@ -51,8 +51,8 @@ function DevPanel({
           <Input
             id="dev-url"
             type="text"
-            value={currentUrl}
-            onChange={(e) => onChangeUrl(e.target.value)}
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
             placeholder="https://example.com"
           />
         </div>
