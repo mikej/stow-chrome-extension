@@ -179,6 +179,7 @@ function BookmarkForm({ tabUrl, tabTitle, onSave }: BookmarkFormProps) {
             type="text"
             value={title}
             placeholder="Title"
+            autoFocus
             onChange={(e) => setTitle(e.target.value)}
           />
         </div>
