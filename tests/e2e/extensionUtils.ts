@@ -54,7 +54,10 @@ export type ExtensionTest = TestType<{ extensionPage: Page }>;
 
 export function createExtensionTest(baseTest: BaseTest): ExtensionTest {
   return baseTest.extend<{ extensionPage: Page }>({
-    extensionPage: async (_fixtures, use, testInfo) => {
+    // Playwright requires the first argument to be an object destructuring
+    // pattern, even when no other fixtures are used
+    // eslint-disable-next-line no-empty-pattern
+    extensionPage: async ({}, use, testInfo) => {
       if (process.env.PLAYWRIGHT_HEADLESS === '1') {
         testInfo.skip('Chrome extensions require headed mode.');
       }
