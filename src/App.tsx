@@ -14,7 +14,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { BookmarkPlus, LoaderCircle, Save, TriangleAlert } from "lucide-react";
+import {
+  Bookmark,
+  BookmarkPlus,
+  LoaderCircle,
+  TriangleAlert,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AppProps {
@@ -363,7 +368,7 @@ function BookmarkForm({
         <Button type="submit" className="h-8 px-3" disabled={isSaving}>
           {isEdit ? (
             <>
-              <Save aria-hidden="true" />
+              <Bookmark aria-hidden="true" />
               {isSaving ? "Updating..." : "Update"}
             </>
           ) : (
