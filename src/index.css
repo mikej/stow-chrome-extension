@@ -24,4 +24,10 @@
     color: #171717;
     font-family: var(--font-sans);
   }
+
+  /* Tailwind v4 no longer gives buttons a pointer cursor; restore it */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
 }
