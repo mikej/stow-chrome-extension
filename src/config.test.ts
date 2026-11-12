@@ -1,4 +1,9 @@
-import { getMeApiUrl, normalizeApiBaseUrl } from "./config";
+import {
+  getCheckItemApiUrl,
+  getItemApiUrl,
+  getMeApiUrl,
+  normalizeApiBaseUrl,
+} from "./config";
 
 describe("normalizeApiBaseUrl", () => {
   it("uses the production URL by default", () => {
@@ -17,5 +22,12 @@ describe("normalizeApiBaseUrl", () => {
 describe("getMeApiUrl", () => {
   it("uses the configured base URL", () => {
     expect(getMeApiUrl()).toBe("https://stow.is/v1/me");
+  });
+});
+
+describe("item API URLs", () => {
+  it("builds the check and item URLs from the configured base URL", () => {
+    expect(getCheckItemApiUrl()).toBe("https://stow.is/v1/items/check");
+    expect(getItemApiUrl(42)).toBe("https://stow.is/v1/items/42");
   });
 });
