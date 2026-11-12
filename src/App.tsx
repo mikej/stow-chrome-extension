@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import {
   apiKeyStorage,
   isExtensionEnvironment,
@@ -45,10 +45,17 @@ export type CheckResult =
   | { existing: false; item: BookmarkDetails };
 
 const FALLBACK_LABEL = "Couldn't check Stow – using page details";
+const INVALID_TOKEN_NOTICE =
+  "Your API token is no longer valid. Enter a new one to continue.";
+
+// thrown when Stow rejects the stored API token, e.g. after it has been
+// regenerated, so the popup can sign out instead of showing a generic error
+class UnauthorizedError extends Error {}
 
 function App({ title, url, onClose }: AppProps) {
   const [storedApiKey, setStoredApiKey] = useState<string | undefined>();
   const [lookup, setLookup] = useState<CheckResult | "failed" | undefined>();
+  const [setupNotice, setSetupNotice] = useState<string | undefined>();
 
   useEffect(() => {
     const loadApiKey = async () => {
@@ -58,6 +65,20 @@ function App({ title, url, onClose }: AppProps) {
 
     loadApiKey();
   }, []);
+
+  async function signOut(notice?: string) {
+    await apiKeyStorage.clear();
+    // don't show the previous token's check result after signing back in
+    setLookup(undefined);
+    setSetupNotice(notice);
+    setStoredApiKey(undefined);
+  }
+
+  // an effect event, so the check effect below doesn't re-run when signOut
+  // changes on each render
+  const onTokenRejected = useEffectEvent(() => {
+    signOut(INVALID_TOKEN_NOTICE);
+  });
 
   useEffect(() => {
     if (!storedApiKey || !url) {
@@ -70,8 +91,14 @@ function App({ title, url, onClose }: AppProps) {
       .then((result) => {
         if (!ignore) setLookup(result);
       })
-      .catch(() => {
-        if (!ignore) setLookup("failed");
+      .catch((error) => {
+        if (ignore) return;
+
+        if (error instanceof UnauthorizedError) {
+          onTokenRejected();
+        } else {
+          setLookup("failed");
+        }
       });
 
     return () => {
@@ -98,15 +125,30 @@ function App({ title, url, onClose }: AppProps) {
     }
 
     await apiKeyStorage.set(apiKey);
+    setSetupNotice(undefined);
     setStoredApiKey(apiKey);
     return "saved";
   }
 
+  // signs out if Stow rejects the token, otherwise passes the error on so
+  // the form can show it
+  async function signOutIfUnauthorized(request: Promise<void>) {
+    try {
+      await request;
+    } catch (error) {
+      if (error instanceof UnauthorizedError) {
+        await signOut(INVALID_TOKEN_NOTICE);
+        return;
+      }
+      throw error;
+    }
+    onClose();
+  }
+
   function renderBookmarkForm(apiKey: string) {
-    const create = async (details: BookmarkDetails) => {
-      await createBookmark(apiKey, details);
-      onClose();
-    };
+    const create = (details: BookmarkDetails) =>
+      signOutIfUnauthorized(createBookmark(apiKey, details));
+    const onSignOut = () => signOut();
     const tabDetails = { url, title, description: "" };
 
     if (!url) {
@@ -114,6 +156,7 @@ function App({ title, url, onClose }: AppProps) {
         <BookmarkForm
           initial={tabDetails}
           onSave={create}
+          onSignOut={onSignOut}
         />
       );
     }
@@ -128,6 +171,7 @@ function App({ title, url, onClose }: AppProps) {
           initial={tabDetails}
           fallback
           onSave={create}
+          onSignOut={onSignOut}
         />
       );
     }
@@ -138,10 +182,10 @@ function App({ title, url, onClose }: AppProps) {
         <BookmarkForm
           initial={lookup.item}
           mode="edit"
-          onSave={async (details) => {
-            await updateBookmark(apiKey, id, details);
-            onClose();
-          }}
+          onSignOut={onSignOut}
+          onSave={(details) =>
+            signOutIfUnauthorized(updateBookmark(apiKey, id, details))
+          }
         />
       );
     }
@@ -150,6 +194,7 @@ function App({ title, url, onClose }: AppProps) {
       <BookmarkForm
         initial={lookup.item}
         onSave={create}
+        onSignOut={onSignOut}
       />
     );
   }
@@ -159,7 +204,7 @@ function App({ title, url, onClose }: AppProps) {
       {storedApiKey ? (
         renderBookmarkForm(storedApiKey)
       ) : (
-        <SetupForm onSave={saveApiKey} />
+        <SetupForm onSave={saveApiKey} notice={setupNotice} />
       )}
     </div>
   );
@@ -177,6 +222,10 @@ async function checkBookmark(
     },
     body: JSON.stringify({ item: { url: tab.url, title: tab.title } }),
   });
+
+  if (response.status === 401) {
+    throw new UnauthorizedError("API token rejected");
+  }
 
   if (!response.ok) {
     throw new Error(`Request failed: ${response.status}`);
@@ -215,6 +264,10 @@ async function createBookmark(apiKey: string, details: BookmarkDetails) {
     body: JSON.stringify(details),
   });
 
+  if (response.status === 401) {
+    throw new UnauthorizedError("API token rejected");
+  }
+
   if (!response.ok) {
     throw new Error(`Request failed: ${response.status}`);
   }
@@ -233,6 +286,10 @@ async function updateBookmark(
     },
     body: JSON.stringify({ item: details }),
   });
+
+  if (response.status === 401) {
+    throw new UnauthorizedError("API token rejected");
+  }
 
   if (!response.ok) {
     throw new Error(`Request failed: ${response.status}`);
@@ -262,6 +319,7 @@ interface BookmarkFormProps {
   mode?: "create" | "edit";
   fallback?: boolean;
   onSave: (details: BookmarkDetails) => Promise<void>;
+  onSignOut: () => void;
 }
 
 function BookmarkForm({
@@ -269,6 +327,7 @@ function BookmarkForm({
   mode = "create",
   fallback = false,
   onSave,
+  onSignOut,
 }: BookmarkFormProps) {
   const [title, setTitle] = useState(initial.title);
   const [description, setDescription] = useState(initial.description);
@@ -327,6 +386,13 @@ function BookmarkForm({
             {isEdit ? "Already saved in Stow." : "Add this page to Stow."}
           </p>
         </div>
+        <button
+          type="button"
+          className="self-start text-xs leading-5 text-neutral-500 hover:text-neutral-950 hover:underline"
+          onClick={onSignOut}
+        >
+          Sign out
+        </button>
       </div>
 
       <div className="space-y-3">

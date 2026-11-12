@@ -7,9 +7,11 @@ export type SetupApiKeyResult = "saved" | "invalid-token";
 
 interface SetupFormProps {
   onSave: (apiKey: string) => Promise<SetupApiKeyResult>;
+  // e.g. why the user was signed out
+  notice?: string;
 }
 
-function SetupForm({ onSave }: SetupFormProps) {
+function SetupForm({ onSave, notice }: SetupFormProps) {
   const [apiKey, setApiKey] = useState("");
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -43,6 +45,15 @@ function SetupForm({ onSave }: SetupFormProps) {
           Enter an API token to get started.
         </p>
       </div>
+
+      {notice ? (
+        <div
+          className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800"
+          role="status"
+        >
+          {notice}
+        </div>
+      ) : null}
 
       <div className="space-y-1.5">
         <Label htmlFor="api-token">API token</Label>
