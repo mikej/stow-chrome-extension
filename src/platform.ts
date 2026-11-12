@@ -41,9 +41,3 @@ export const apiKeyStorage = {
     window.localStorage.setItem("apiKey", apiKey);
   },
 };
-
-export function maybeCloseWindow() {
-  if (isExtensionEnvironment) {
-    window.close();
-  }
-}

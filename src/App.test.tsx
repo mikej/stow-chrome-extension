@@ -76,7 +76,7 @@ describe('App (dev mode)', () => {
       .spyOn(globalThis, 'fetch')
       .mockResolvedValue(new Response('{}', { status: 200 }));
 
-    render(<App url="" title="" />);
+    render(<App onClose={vi.fn()} url="" title="" />);
 
     const user = userEvent.setup();
     await user.type(screen.getByLabelText(/API token/i), 'valid-token');
@@ -100,7 +100,7 @@ describe('App (dev mode)', () => {
       new Response(null, { status: 401 })
     );
 
-    render(<App url="" title="" />);
+    render(<App onClose={vi.fn()} url="" title="" />);
 
     const user = userEvent.setup();
     await user.type(screen.getByLabelText(/API token/i), 'bad-token');
@@ -120,7 +120,7 @@ describe('App (dev mode)', () => {
       new Response(null, { status: 500 })
     );
 
-    render(<App url="https://example.com" title="Example title" />);
+    render(<App onClose={vi.fn()} url="https://example.com" title="Example title" />);
 
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: /Save/i }));
@@ -138,7 +138,7 @@ describe('App (dev mode)', () => {
       .mockResolvedValueOnce(new Response(null, { status: 500 }))
       .mockResolvedValueOnce(new Response('{}', { status: 200 }));
 
-    render(<App url="https://example.com" title="Example title" />);
+    render(<App onClose={vi.fn()} url="https://example.com" title="Example title" />);
 
     const user = userEvent.setup();
     const saveButton = await screen.findByRole('button', { name: /Save/i });
@@ -156,7 +156,7 @@ describe('App (dev mode)', () => {
     localStorage.setItem('apiKey', 'valid-token');
     vi.spyOn(globalThis, 'fetch').mockReturnValue(new Promise(() => {}));
 
-    render(<App url="https://example.com" title="Example title" />);
+    render(<App onClose={vi.fn()} url="https://example.com" title="Example title" />);
 
     expect(await screen.findByRole('status')).toHaveTextContent(
       /Checking Stow/i
@@ -170,7 +170,7 @@ describe('App (dev mode)', () => {
       .spyOn(globalThis, 'fetch')
       .mockResolvedValue(jsonResponse(newBookmarkCheck));
 
-    render(<App url="https://example.com" title="Example title" />);
+    render(<App onClose={vi.fn()} url="https://example.com" title="Example title" />);
 
     await screen.findByRole('form', { name: /Save bookmark/i });
     expect(fetchMock).toHaveBeenCalledWith(
@@ -191,7 +191,7 @@ describe('App (dev mode)', () => {
       .mockResolvedValueOnce(jsonResponse(newBookmarkCheck))
       .mockResolvedValueOnce(jsonResponse({ id: 2 }, 201));
 
-    render(<App url="https://example.com" title="Example title" />);
+    render(<App onClose={vi.fn()} url="https://example.com" title="Example title" />);
 
     expect(await screen.findByLabelText('Title')).toHaveValue('Processed title');
     expect(screen.getByLabelText('Description')).toHaveValue(
@@ -218,7 +218,7 @@ describe('App (dev mode)', () => {
       .mockResolvedValueOnce(jsonResponse(existingBookmarkCheck))
       .mockResolvedValueOnce(jsonResponse(existingBookmarkCheck.item));
 
-    render(<App url="https://example.com" title="Example title" />);
+    render(<App onClose={vi.fn()} url="https://example.com" title="Example title" />);
 
     expect(
       await screen.findByRole('heading', { name: /Edit bookmark/i })
@@ -255,7 +255,7 @@ describe('App (dev mode)', () => {
       .mockResolvedValueOnce(jsonResponse(existingBookmarkCheck))
       .mockResolvedValueOnce(new Response(null, { status: 500 }));
 
-    render(<App url="https://example.com" title="Example title" />);
+    render(<App onClose={vi.fn()} url="https://example.com" title="Example title" />);
 
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: /Update/i }));
@@ -272,7 +272,7 @@ describe('App (dev mode)', () => {
       .mockResolvedValueOnce(new Response(null, { status: 500 }))
       .mockResolvedValueOnce(jsonResponse({ id: 2 }, 201));
 
-    render(<App url="https://example.com" title="Example title" />);
+    render(<App onClose={vi.fn()} url="https://example.com" title="Example title" />);
 
     expect(
       await screen.findByLabelText(/Couldn't check Stow/i)
@@ -340,6 +340,83 @@ describe('App (dev mode)', () => {
     );
     expect(screen.getByLabelText('URL')).toHaveValue(
       'https://example.com/applied'
+    );
+  });
+  it('closes the popup after saving a new bookmark', async () => {
+    localStorage.setItem('apiKey', 'valid-token');
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(jsonResponse(newBookmarkCheck))
+      .mockResolvedValueOnce(jsonResponse({ id: 2 }, 201));
+    const onClose = vi.fn();
+
+    render(<App onClose={onClose} url="https://example.com" title="Example title" />);
+
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /Save/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+  });
+
+  it('closes the popup after updating an existing bookmark', async () => {
+    localStorage.setItem('apiKey', 'valid-token');
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(jsonResponse(existingBookmarkCheck))
+      .mockResolvedValueOnce(jsonResponse(existingBookmarkCheck.item));
+    const onClose = vi.fn();
+
+    render(<App onClose={onClose} url="https://example.com" title="Example title" />);
+
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /Update/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+  });
+
+  it('keeps the popup open when saving fails', async () => {
+    localStorage.setItem('apiKey', 'valid-token');
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(jsonResponse(newBookmarkCheck))
+      .mockResolvedValueOnce(new Response(null, { status: 500 }));
+    const onClose = vi.fn();
+
+    render(<App onClose={onClose} url="https://example.com" title="Example title" />);
+
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /Save/i }));
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('simulates closing and reopening the popup in dev mode', async () => {
+    localStorage.setItem('apiKey', 'valid-token');
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(jsonResponse(newBookmarkCheck))
+      .mockResolvedValueOnce(jsonResponse({ id: 1 }, 201))
+      .mockResolvedValueOnce(jsonResponse(existingBookmarkCheck));
+
+    render(<DevHarness url="https://example.com" title="Example title" />);
+
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /Save/i }));
+
+    expect(
+      await screen.findByText(/Popup closed/i)
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Open again/i })).toHaveFocus();
+
+    // Enter on the focused button reopens the popup
+    await user.keyboard('{Enter}');
+
+    expect(
+      await screen.findByRole('heading', { name: /Edit bookmark/i })
+    ).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://stow.is/v1/items/check',
+      expect.objectContaining({ method: 'POST' })
     );
   });
 });

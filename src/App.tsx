@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   apiKeyStorage,
   isExtensionEnvironment,
-  maybeCloseWindow,
 } from "./platform";
 import {
   getCheckItemApiUrl,
@@ -21,6 +20,8 @@ import { cn } from "@/lib/utils";
 interface AppProps {
   url: string;
   title: string;
+  // called after a bookmark is saved; closes the popup in the extension
+  onClose: () => void;
 }
 
 interface TabDetails {
@@ -40,7 +41,7 @@ export type CheckResult =
 
 const FALLBACK_LABEL = "Couldn't check Stow – using page details";
 
-function App({ title, url }: AppProps) {
+function App({ title, url, onClose }: AppProps) {
   const [storedApiKey, setStoredApiKey] = useState<string | undefined>();
   const [lookup, setLookup] = useState<CheckResult | "failed" | undefined>();
 
@@ -97,13 +98,17 @@ function App({ title, url }: AppProps) {
   }
 
   function renderBookmarkForm(apiKey: string) {
+    const create = async (details: BookmarkDetails) => {
+      await createBookmark(apiKey, details);
+      onClose();
+    };
     const tabDetails = { url, title, description: "" };
 
     if (!url) {
       return (
         <BookmarkForm
           initial={tabDetails}
-          onSave={(details) => createBookmark(apiKey, details)}
+          onSave={create}
         />
       );
     }
@@ -117,7 +122,7 @@ function App({ title, url }: AppProps) {
         <BookmarkForm
           initial={tabDetails}
           fallback
-          onSave={(details) => createBookmark(apiKey, details)}
+          onSave={create}
         />
       );
     }
@@ -128,7 +133,10 @@ function App({ title, url }: AppProps) {
         <BookmarkForm
           initial={lookup.item}
           mode="edit"
-          onSave={(details) => updateBookmark(apiKey, id, details)}
+          onSave={async (details) => {
+            await updateBookmark(apiKey, id, details);
+            onClose();
+          }}
         />
       );
     }
@@ -136,7 +144,7 @@ function App({ title, url }: AppProps) {
     return (
       <BookmarkForm
         initial={lookup.item}
-        onSave={(details) => createBookmark(apiKey, details)}
+        onSave={create}
       />
     );
   }
@@ -205,8 +213,6 @@ async function createBookmark(apiKey: string, details: BookmarkDetails) {
   if (!response.ok) {
     throw new Error(`Request failed: ${response.status}`);
   }
-
-  maybeCloseWindow();
 }
 
 async function updateBookmark(
@@ -226,8 +232,6 @@ async function updateBookmark(
   if (!response.ok) {
     throw new Error(`Request failed: ${response.status}`);
   }
-
-  maybeCloseWindow();
 }
 
 const cardClassName = cn(
