@@ -13,7 +13,7 @@ function DevHarness({ url, title }: DevHarnessProps) {
   const [session, setSession] = useState({ id: 0, url, title });
 
   return (
-    <div className="min-h-full bg-neutral-50 p-3">
+    <div className="min-h-screen bg-neutral-50 p-3">
       <DevPanel
         initialUrl={url}
         initialTitle={title}
