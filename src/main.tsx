@@ -32,7 +32,13 @@ async function init() {
     tabInfo = { url: "", title: "" };
   }
 
-  render(<App url={tabInfo.url} title={tabInfo.title} />);
+  render(
+    <App
+      url={tabInfo.url}
+      title={tabInfo.title}
+      onClose={() => window.close()}
+    />,
+  );
 }
 
 init();
