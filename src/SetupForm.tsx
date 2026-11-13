@@ -50,7 +50,7 @@ function SetupForm({ onSave }: SetupFormProps) {
           id="api-token"
             type="text"
             value={apiKey}
-          placeholder="stow_..."
+          placeholder="Paste your API token"
             onChange={(e) => setApiKey(e.target.value)}
           />
       </div>
