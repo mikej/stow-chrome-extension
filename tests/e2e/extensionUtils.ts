@@ -2,7 +2,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { chromium, type BrowserContext, type Page, type TestType } from '@playwright/test';
 
-export const EXTENSION_NAME = 'Stow Chrome Extension';
+export const EXTENSION_NAME = 'Stow';
 
 export function getExtensionPath() {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
