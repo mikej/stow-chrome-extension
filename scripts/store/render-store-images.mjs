@@ -27,7 +27,7 @@ const ARTICLE = {
 const SCENES = [
   {
     file: "screenshot-1-save.png",
-    heading: "Save the page you're on in one click",
+    heading: "Save the page you're on to Stow",
     subheading: "Stow suggests a clean title and description for you.",
     apiKey: API_TOKEN,
     check: {
@@ -41,9 +41,9 @@ const SCENES = [
     },
   },
   {
-    file: "screenshot-2-edit.png",
-    heading: "Already saved? Update it instead",
-    subheading: "Stow spots pages you've saved before, so you don't end up with duplicates.",
+    file: "screenshot-2-notes.png",
+    heading: "Keep your own notes with it",
+    subheading: "Add a note when you save a page, and come back to it any time.",
     apiKey: API_TOKEN,
     check: {
       existing: true,
@@ -203,7 +203,7 @@ function promoTileHtml(icon) {
 </style></head>
 <body>
   <div class="mark"><img src="${icon}" alt=""><span>Stow</span></div>
-  <p>Save any page in one click</p>
+  <p>Save pages to Stow from your browser</p>
 </body></html>`;
 }
 
