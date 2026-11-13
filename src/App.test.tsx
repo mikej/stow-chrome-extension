@@ -419,4 +419,112 @@ describe('App (dev mode)', () => {
       expect.objectContaining({ method: 'POST' })
     );
   });
+  it('signs out from the bookmark form', async () => {
+    localStorage.setItem('apiKey', 'valid-token');
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      jsonResponse(newBookmarkCheck)
+    );
+
+    render(<App onClose={vi.fn()} url="https://example.com" title="Example title" />);
+
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /Sign out/i }));
+
+    expect(
+      await screen.findByText(/Enter an API token to get started/i)
+    ).toBeInTheDocument();
+    expect(localStorage.getItem('apiKey')).toBeNull();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
+  it('signs out from the edit form', async () => {
+    localStorage.setItem('apiKey', 'valid-token');
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      jsonResponse(existingBookmarkCheck)
+    );
+
+    render(<App onClose={vi.fn()} url="https://example.com" title="Example title" />);
+
+    const user = userEvent.setup();
+    await screen.findByRole('heading', { name: /Edit bookmark/i });
+    await user.click(screen.getByRole('button', { name: /Sign out/i }));
+
+    expect(
+      await screen.findByText(/Enter an API token to get started/i)
+    ).toBeInTheDocument();
+    expect(localStorage.getItem('apiKey')).toBeNull();
+  });
+
+  it('runs a fresh check after signing back in', async () => {
+    localStorage.setItem('apiKey', 'old-token');
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(jsonResponse(existingBookmarkCheck))
+      .mockResolvedValueOnce(jsonResponse({}))
+      .mockReturnValueOnce(new Promise(() => {}));
+
+    render(<App onClose={vi.fn()} url="https://example.com" title="Example title" />);
+
+    const user = userEvent.setup();
+    await screen.findByRole('heading', { name: /Edit bookmark/i });
+    await user.click(screen.getByRole('button', { name: /Sign out/i }));
+    await user.type(await screen.findByLabelText(/API token/i), 'new-token');
+    await user.click(screen.getByRole('button', { name: /Continue/i }));
+
+    // the new token's check is still pending, so the old result isn't shown
+    expect(await screen.findByRole('status')).toHaveTextContent(/Checking Stow/i);
+    expect(
+      screen.queryByRole('heading', { name: /Edit bookmark/i })
+    ).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://stow.is/v1/items/check',
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'new-token' }),
+      })
+    );
+  });
+
+  it('signs out with a notice when the check rejects the token', async () => {
+    localStorage.setItem('apiKey', 'revoked-token');
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(jsonResponse({}))
+      .mockReturnValueOnce(new Promise(() => {}));
+
+    render(<App onClose={vi.fn()} url="https://example.com" title="Example title" />);
+
+    expect(
+      await screen.findByText(/API token is no longer valid/i)
+    ).toBeInTheDocument();
+    expect(localStorage.getItem('apiKey')).toBeNull();
+
+    // the notice goes away once a new token is saved
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText(/API token/i), 'new-token');
+    await user.click(screen.getByRole('button', { name: /Continue/i }));
+
+    expect(await screen.findByText(/Checking Stow/i)).toBeInTheDocument();
+    expect(
+      screen.queryByText(/API token is no longer valid/i)
+    ).not.toBeInTheDocument();
+  });
+
+  it('signs out with a notice when saving rejects the token', async () => {
+    localStorage.setItem('apiKey', 'valid-token');
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(jsonResponse(newBookmarkCheck))
+      .mockResolvedValueOnce(new Response(null, { status: 401 }));
+    const onClose = vi.fn();
+
+    render(<App onClose={onClose} url="https://example.com" title="Example title" />);
+
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /^Save$/i }));
+
+    expect(
+      await screen.findByText(/API token is no longer valid/i)
+    ).toBeInTheDocument();
+    expect(localStorage.getItem('apiKey')).toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });

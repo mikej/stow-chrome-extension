@@ -40,4 +40,12 @@ export const apiKeyStorage = {
 
     window.localStorage.setItem("apiKey", apiKey);
   },
+  async clear(): Promise<void> {
+    if (hasChromeStorage) {
+      await chrome.storage.local.remove("apiKey");
+      return;
+    }
+
+    window.localStorage.removeItem("apiKey");
+  },
 };
