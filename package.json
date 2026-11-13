@@ -14,7 +14,8 @@
     "test:e2e:ui": "npm run build && playwright test --ui",
     "test:e2e:headed": "npm run build && playwright test --headed",
     "test:e2e:install": "playwright install --with-deps",
-    "icons": "node scripts/render-icons.mjs"
+    "icons": "node scripts/render-icons.mjs",
+    "store-images": "npm run build && node scripts/store/render-store-images.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.17",
