@@ -17,7 +17,7 @@
       "32": "icons/icon-32.png"
     }
   },
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage", "activeTab"],
   "commands": {
     "_execute_action": {
       "description": "Save the current page to Stow",
