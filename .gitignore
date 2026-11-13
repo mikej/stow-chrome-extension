@@ -23,3 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 test-results/.last-run.json
+
+# packaged extension for the Chrome Web Store
+*.zip
